@@ -92,7 +92,7 @@ df_filtered <- df_filtered %>%
 
 # EXPORT ---------------------------------------------------------------
 
-write_csv(df_filtered, "Dataout/cop-validation-msd-tx_tb.csv")
+write_csv(df_filtered, "Dataout/cop-validation-msd.csv")
 
 
 
