@@ -1,5 +1,5 @@
 # AUTHOR:   K. Srikanth | USAID
-# PURPOSE:  
+# PURPOSE:  prepare PSNUxIM MSD for tableau
 # REF ID:   8309dfcd 
 # LICENSE:  MIT
 # DATE:     2023-02-27
@@ -28,6 +28,8 @@ path <- si_path() %>%
   return_latest("Target Setting Tool_South Africa_20230214202141 v02.16 11h52") 
 
 data_folder <- "Data/"
+
+
 
 
 
@@ -62,20 +64,35 @@ dsp_crosswalk <- data_folder %>%
   read_excel() %>% 
   janitor::clean_names()
 
+msd_disagg_map <- data_folder %>% 
+  return_latest("msd_disagg_mapping.xlsx") %>% 
+  read_excel()
+
 
 # MUNGE -------------------------------------------------------------------
 
 # add agency look back
 
 df_filtered <- df_msd %>% 
-  filter(fiscal_year %in% c(2022, 2023)) %>% #filter to 2022 and 2023
-  select(any_of(cols), mech_code) %>% #select columns in DP + mech_code
+ # filter(fiscal_year %in% c(2022, 2023)) %>% #filter to 2022 and 2023
+  select(any_of(cols),funding_agency, mech_code) %>% #select columns in DP + mech_code
   left_join(psnu_crosswalk, by = c("psnu", "psnuuid")) %>% #add shortname to join DSP crosswalk
   mutate(dspid = str_c(mech_code, short_name)) %>% #create dspid 
   left_join(dsp_crosswalk %>% select(-c(mechanism_id)), by = c("dspid")) #join dsp crosswalk for lookback
 
+#join agency lookmap and mutate FY
+df_filtered <- df_filtered %>% 
+  semi_join(msd_disagg_map, by = c("indicator", "numeratordenom", "standardizeddisaggregate")) %>% 
+  clean_indicator() %>% 
+  mutate(fiscal_year = as.character(fiscal_year)) %>% 
+  mutate(fiscal_year = str_replace(fiscal_year, "20", "FY")) %>% 
+  select(-c(snu1)) 
 
+  
 
 # EXPORT ---------------------------------------------------------------
 
-write_csv(df_filtered, "Dataout/FY23Q1_PSNUxIM_SA_filtered.csv")
+write_csv(df_filtered, "Dataout/cop-validation-msd-tx_tb.csv")
+
+
+
