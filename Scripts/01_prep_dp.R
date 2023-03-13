@@ -91,13 +91,24 @@ dp_plhiv_filtered <- dp_plhiv %>%
   mutate(indicator = ifelse(indicator == "PLHIV_Residents", "PLHIV", indicator))
 
 #bind plhiv and all tabs for import into Tableau
-dp_final <- bind_rows(dp_filtered, dp_plhiv_filtered)
+dp_final <- bind_rows(dp_filtered, dp_plhiv_filtered) %>% 
+    mutate(agency_lookback = funding_agency)
+
+#recode snuprioritization
+
+dp_final <- dp_final %>% 
+  mutate(snuprioritization = recode(snuprioritization,
+                                    "2 - Scale-up: Aggressive" = "2 - Scale-Up: Aggressive",
+                                    "1 - Scale-up: Saturation" = "1 - Scale-Up: Saturation")) 
+
+today <- lubridate::today()
+
 
 
 write_csv(dp_plhiv_filtered, "Dataout/cop-validation-plhiv.csv")  
 write_csv(dp_filtered, "Dataout/cop-validation-tameDP.csv")  
 
-write_csv(dp_final,"Dataout/cop-validation-dp-all.csv")
+write_csv(dp_final, glue::glue("Dataout/cop-validation-dp-all_v2_{today}.csv"))
 
 
 

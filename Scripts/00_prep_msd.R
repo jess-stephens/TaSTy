@@ -37,7 +37,7 @@ data_folder <- "Data/"
 
 #pull in DP columns
 dp_cols <- tame_dp(path) %>% 
-  names()
+  names() 
 
 #READ IN MSD
 df_msd <- si_path() %>% 
@@ -75,7 +75,7 @@ msd_disagg_map <- data_folder %>%
 
 df_filtered <- df_msd %>% 
  # filter(fiscal_year %in% c(2022, 2023)) %>% #filter to 2022 and 2023
-  select(any_of(cols),funding_agency, mech_code) %>% #select columns in DP + mech_code
+  select(any_of(dp_cols),funding_agency, mech_code) %>% #select columns in DP + mech_code
   left_join(psnu_crosswalk, by = c("psnu", "psnuuid")) %>% #add shortname to join DSP crosswalk
   mutate(dspid = str_c(mech_code, short_name)) %>% #create dspid 
   left_join(dsp_crosswalk %>% select(-c(mechanism_id)), by = c("dspid")) #join dsp crosswalk for lookback
@@ -85,14 +85,50 @@ df_filtered <- df_filtered %>%
   semi_join(msd_disagg_map, by = c("indicator", "numeratordenom", "standardizeddisaggregate")) %>% 
   clean_indicator() %>% 
   mutate(fiscal_year = as.character(fiscal_year)) %>% 
-  mutate(fiscal_year = str_replace(fiscal_year, "20", "FY")) %>% 
-  select(-c(snu1)) 
+  mutate(fiscal_year = str_replace(fiscal_year, "20", "FY"))
+
+
+#mutate age bands
+  #gend_gbv does not have age bands for new targets
+
+age_map <- data_folder %>% 
+  return_latest("age_mapping.xlsx") %>% 
+  read_excel()
+  
+df_age_adj <- df_filtered %>% 
+  left_join(age_map, by = c("indicator", "ageasentered" = "age_msd")) %>% 
+  mutate(age_dp = ifelse(is.na(age_dp), ageasentered, age_dp)) %>% 
+  select(-ageasentered) %>% 
+  # mutate(cumulative = ifelse(is.na(cumulative), 0, cumulative)) %>% 
+  # mutate(targets = ifelse(is.na(cumulative), 0, cumulative)) %>% 
+  group_by(across(-c(cumulative, targets))) %>% 
+ # group_by_all() %>% 
+ # group_by(indicator, fiscal_year, standardizeddisaggregate, age_dp) %>% 
+  summarise(across(c(cumulative, targets), sum, na.rm = TRUE), .groups = "drop") 
+
+df_msd_final <- df_age_adj %>% 
+  select(-c(country)) %>% 
+  relocate(age_dp, .after = 8) %>% 
+  relocate(any_of(c("cumulative", "targets")), .after = 13) %>% 
+  relocate(funding_agency, .after = 15) %>% 
+  rename(ageasentered = age_dp) 
+
+
+# df_msd_final %>% 
+#   filter(indicator == "TX_NEW",
+#          fiscal_year == "FY21",
+#          snuprioritization != "5 - Centrally Supported") %>% 
+#   group_by(fiscal_year, indicator) %>% 
+#   summarise(across(c(cumulative, targets), sum, na.rm = TRUE), .groups = "drop") 
+
 
   
 
 # EXPORT ---------------------------------------------------------------
 
-write_csv(df_filtered, "Dataout/cop-validation-msd.csv")
+today <- lubridate::today()
+
+write_csv(df_msd_final, glue::glue("Dataout/cop-validation-msd_v2_{today}.csv"))
 
 
 
