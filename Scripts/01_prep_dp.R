@@ -7,6 +7,7 @@
 
 # DEPENDENCIES ------------------------------------------------------------
 
+library(gagglr)
 library(glamr)
 library(tidyverse)
 library(glitr)
@@ -25,8 +26,10 @@ library(datapackr)
 
 # GLOBAL VARIABLES --------------------------------------------------------
 
-path <- si_path() %>% 
-  return_latest("Target Setting Tool_South Africa_20230214202141 v02.16 11h52") 
+tst_folder <- "Data/draft_tst"
+
+path <- tst_folder %>% 
+  return_latest("MASTER TOOL_Target Setting Tool_South Africa_20230214202141")
 
 df_msd <- si_path() %>% 
   return_latest("MER_Structured_Datasets_PSNU_IM_FY21-23_20230210_v1_1_South Africa") %>% 
@@ -35,11 +38,6 @@ df_msd <- si_path() %>%
 
 data_folder <- "Data/"
 
-# load_secrets()
-# 
-# 
-# loginToDATIM(username = datim_user(), password = datim_pwd(),
-#              base_url = "https://www.datim.org/")
 
 
 # IMPORT  -------------------------------------------------------------------
@@ -105,10 +103,10 @@ today <- lubridate::today()
 
 
 
-write_csv(dp_plhiv_filtered, "Dataout/cop-validation-plhiv.csv")  
-write_csv(dp_filtered, "Dataout/cop-validation-tameDP.csv")  
+# write_csv(dp_plhiv_filtered, "Dataout/cop-validation-plhiv.csv")  
+# write_csv(dp_filtered, "Dataout/cop-validation-tameDP.csv")  
 
-write_csv(dp_final, glue::glue("Dataout/cop-validation-dp-all_v2_{today}.csv"))
+write_csv(dp_final, glue::glue("Dataout/cop-validation-dp-all_v3_{today}.csv"))
 
 
 
