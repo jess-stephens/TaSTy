@@ -26,17 +26,17 @@ library(datapackr)
 
 # GLOBAL VARIABLES --------------------------------------------------------
 
-tst_folder <- "Data/draft_tst"
+tst_folder <- "C:/Users/jstephens/Documents/Zim/COP23/TST"
 
 path <- tst_folder %>% 
-  return_latest("MASTER TOOL_Target Setting Tool_South Africa_20230214202141")
+  return_latest("Zimbabwe_TST_Version_23March2023")
 
 df_msd <- si_path() %>% 
-  return_latest("MER_Structured_Datasets_PSNU_IM_FY21-23_20230210_v1_1_South Africa") %>% 
+  return_latest("Zimbabwe") %>% 
   read_psd() %>% 
   resolve_knownissues()
 
-data_folder <- "Data/"
+data_folder <- "C:/Users/jstephens/Documents/Zim/COP23/Data"
 
 
 
@@ -48,10 +48,10 @@ dp <- tame_dp(path)
 #grab PLHIV tab for validations
 dp_plhiv <- tame_dp(path, type = 'PLHIV')
 
-#import psnu agency mapping
-psnu_map <- data_folder %>% 
-  return_latest("psnu_agency_ref.xlsx") %>% 
-  read_excel()
+# #import psnu agency mapping
+# psnu_map <- data_folder %>% 
+#   return_latest("psnu_agency_ref.xlsx") %>% 
+#   read_excel()
 
 # FILTER DP -------------------------------------------------------------
 
@@ -72,25 +72,26 @@ psnu_map <- data_folder %>%
 dp_filtered <- dp %>%
   clean_indicator() %>% 
   filter(fiscal_year == 2024) %>% 
-  left_join(psnu_map, by =c("psnu")) %>% 
-  relocate(funding_agency, .before = 17) %>% 
-  select(-c(country)) %>% 
+  # left_join(psnu_map, by =c("psnu")) %>% 
+  # relocate(funding_agency, .before = 17) %>% 
+  # select(-c(country)) %>% 
   mutate(fiscal_year = as.character(fiscal_year)) %>% 
   mutate(fiscal_year = str_replace(fiscal_year, "20", "FY"))
 
 # filter PLHIV tab of dp and do the same munging
 dp_plhiv_filtered <- dp_plhiv %>%
   clean_indicator() %>%
-  left_join(psnu_map, by =c("psnu")) %>% 
-  select(-c(country)) %>% 
+  # left_join(psnu_map, by =c("psnu")) %>% 
+  # select(-c(country)) %>% 
   mutate(fiscal_year = as.character(fiscal_year)) %>% 
   mutate(fiscal_year = str_replace(fiscal_year, "20", "FY")) %>%
   mutate(standardizeddisaggregate = ifelse(indicator == "PLHIV_Residents", "Age/Sex/HIVStatus", standardizeddisaggregate)) %>% 
   mutate(indicator = ifelse(indicator == "PLHIV_Residents", "PLHIV", indicator))
 
 #bind plhiv and all tabs for import into Tableau
-dp_final <- bind_rows(dp_filtered, dp_plhiv_filtered) %>% 
-    mutate(agency_lookback = funding_agency)
+dp_final <- bind_rows(dp_filtered, dp_plhiv_filtered)
+# %>% 
+    # mutate(agency_lookback = funding_agency)
 
 #recode snuprioritization
 
@@ -106,7 +107,7 @@ today <- lubridate::today()
 # write_csv(dp_plhiv_filtered, "Dataout/cop-validation-plhiv.csv")  
 # write_csv(dp_filtered, "Dataout/cop-validation-tameDP.csv")  
 
-write_csv(dp_final, glue::glue("Dataout/cop-validation-dp-all_v3_{today}.csv"))
+write_csv(dp_final, glue::glue("C:/Users/jstephens/Documents/Zim/COP23/Dataout/Zimbabwe_cop-validation-dp-all_v3_{today}.csv"))
 
 
 
